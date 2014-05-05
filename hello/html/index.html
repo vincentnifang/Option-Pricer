@@ -1,0 +1,675 @@
+<!DOCTYPE HTML>
+
+
+<html xmlns="http://www.w3.org/1999/html">
+	<head>
+		<title>Option Pricer</title>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="description" content="" />
+		<meta name="keywords" content="" />
+		<!--[if lte IE 8]><script src="css/ie/html5shiv.js"></script><![endif]-->
+		<script src="/static/js/jquery.min.js"></script>
+		<script src="/static/js/jquery.poptrox.min.js"></script>
+		<script src="/static/js/skel.min.js"></script>
+		<script src="/static/js/init.js"></script>
+		<noscript>
+			<link rel="stylesheet" href="/static/css/skel-noscript.css" />
+			<link rel="stylesheet" href="/static/css/style.css" />
+		</noscript>
+		<script type="text/javascript">
+		$(document).ready(function(){
+            $("#asian_geometric_arithmetic").change(function(){
+                $value = $("#asian_geometric_arithmetic").val();
+                if ($value == "geometric"){
+                    $("#arithmetic_input").hide("slow");
+                }else {
+                    $("#arithmetic_input").show("slow");
+                }
+            });
+            $("#basket_geometric_arithmetic").change(function(){
+                $value = $("#basket_geometric_arithmetic").val();
+                if ($value == "geometric"){
+                    $("#basket_arithmetic_input").hide("slow");
+                }else {
+                    $("#basket_arithmetic_input").show("slow");
+                }
+            });
+			$("#bs_euro").click(function(){
+            	$spot_price = $("#bs_spot_price").val();
+            	$volatility = $("#bs_volatility").val();
+            	$rate = $("#bs_rate").val();
+            	$maturity = $("#bs_maturity").val();
+            	$strike_price = $("#bs_strike_price").val();
+            	$option_type = $("#bs_option_type").val();
+            	var url = "/bs_euro"; 
+            	var data = {spot_price:$spot_price,
+            		volatility:$volatility,
+            		rate:$rate,
+            		maturity:$maturity,
+            		strike_price:$strike_price,
+            		option_type:$option_type};
+            	$.ajax({  
+                	type : "get",  
+                	async : false,  //同步请求  
+                	url : url,  
+                	data : data,  
+                	timeout:1000,  
+                	success:function(dates){  
+                    	//alert(dates);
+                    	$("#bs_price").hide().fadeIn("slow");
+                    	$("#bs_option_price").html(dates);
+                    	$option_detail = "<br>Spot price : "+$spot_price+"; Volatility : "+$volatility
+                                +";<br>"+"Risk-free interest Rate : "+$rate+"; Time to Maturity : "+$maturity
+                                +";<br>"+"Strike price : "+$strike_price+"; Option Type : "+$option_type;
+                    	$("#bs_option").html($option_detail);
+                    	//$("#bs_euro").closest('form').find("input[type=text], textarea").val("");
+                    	//$("#out").html(dates);//要刷新的div  
+                	},  
+                	error: function() {  
+                    	alert("Pls filled correct numbers and try again!");  
+                 	}
+                });
+            });
+
+            function get_geo_price(){
+                $spot_price = $("#asian_spot_price").val();
+            	$volatility = $("#asian_volatility").val();
+            	$rate = $("#asian_rate").val();
+            	$maturity = $("#asian_maturity").val();
+            	$strike_price = $("#asian_strike_price").val();
+            	$observation_num = $("#asian_observation_num").val();
+            	$option_type = $("#asian_option_type").val();
+            	var url = "/get_geometric_asian_option";
+            	var data = {spot_price:$spot_price,
+            		volatility:$volatility,
+            		rate:$rate,
+            		maturity:$maturity,
+            		strike_price:$strike_price,
+            		observation_num:$observation_num,
+            		option_type:$option_type};
+            	$.ajax({
+                	type : "get",
+                	async : false,  //同步请求
+                	url : url,
+                	data : data,
+                	timeout:1000,
+                	success:function(dates){
+                    	//alert(dates);
+                        $("#asian_conf").hide();
+                    	$("#asian_price").hide().fadeIn("slow");
+                    	$("#asian_option_price").html(dates);
+                        $option_detail = "<br>Spot price : "+$spot_price+"; Volatility : "+$volatility
+                                +";<br>"+"Risk-free interest Rate : "+$rate+"; Time to Maturity : "+$maturity
+                                +";<br>"+"Strike price : "+$strike_price+"; Option Type : "+$option_type
+                                +";<br>"+"Observation Number : "+$observation_num;
+                    	//alert($option_detail)
+                    	$("#asian_option").html($option_detail);
+                    	//$("#get_asian_option").closest('form').find("input[type=text], textarea").val("");
+                    	//$("#out").html(dates);//要刷新的div
+                	},
+                	error: function() {
+                    	alert("Pls filled correct numbers and try again!");
+                 	}
+                 });
+
+            }
+            function get_arith_price(){
+            	$spot_price = $("#asian_spot_price").val();
+            	$volatility = $("#asian_volatility").val();
+            	$rate = $("#asian_rate").val();
+            	$maturity = $("#asian_maturity").val();
+            	$strike_price = $("#asian_strike_price").val();
+            	$observation_num = $("#asian_observation_num").val();
+            	$path_num = $("#asian_path_num").val();
+            	$control_variate = $("#asian_control_variate").val();
+            	$option_type = $("#asian_option_type").val();
+            	var url = "/get_arithmetic_asian_option";
+            	var data = {spot_price:$spot_price,
+            		volatility:$volatility,
+            		rate:$rate,
+            		maturity:$maturity,
+            		strike_price:$strike_price,
+            		observation_num:$observation_num,
+            		path_num:$path_num,
+            		control_variate:$control_variate,
+            		option_type:$option_type};
+            	$.ajax({
+                	type : "get",
+                	async : false,  //同步请求
+                	url : url,
+                	data : data,
+                	timeout:1000,
+                	success:function(dates){
+                        $output = dates.split(':');
+                    	$("#asian_price").hide().fadeIn("slow");
+                    	$("#asian_option_price").html($output[0]);
+                        $option_detail = "<br>Spot price : "+$spot_price+"; Volatility : "+$volatility
+                                +";<br>"+"Risk-free interest Rate : "+$rate+"; Time to Maturity : "+$maturity
+                                +";<br>"+"Strike price : "+$strike_price+"; Option Type : "+$option_type
+                                +";<br>"+"Observation Number : "+$observation_num
+                                +";<br>"+"Path Number : "+$path_num+"; Control Variate : "+$control_variate;
+
+                    	//alert($option_detail);
+                    	$("#asian_option").html($option_detail);
+                        $("#asian_conf").hide().fadeIn("slow");
+                        $("#asian_option_conf").html($output[1]);
+                    	//$("#get_asian_option").closest('form').find("input[type=text], textarea").val("");
+                    	//$("#out").html(dates);//要刷新的div
+                	},
+                	error: function() {
+                    	alert("Pls filled correct numbers and try again!");
+                 	}
+                 });
+
+            }
+
+			$("#get_asian_option").click(function(){
+			    $geo_asi = $("#asian_geometric_arithmetic").val();
+			    if($geo_asi == "geometric"){
+                    get_geo_price();
+			    }
+			    else {
+			        get_arith_price();
+			    }
+			});
+
+            function get_basket_geo_price(){
+            	$S1 = $("#basket_stock1_price").val();
+            	$S2 = $("#basket_stock2_price").val();
+            	$V1 = $("#basket_volatility1").val();
+            	$V2 = $("#basket_volatility2").val();
+            	$R = $("#basket_rate").val();
+            	$T = $("#basket_maturity").val();
+            	$K = $("#basket_strike_price").val();
+            	$rou = $("#basket_correlation").val();
+            	$option_type = $("#basket_option_type").val();
+                if (parseFloat($rou) > 1){
+                    alert("the abs of correlation must smaller than 1!");
+                    $("#basket_correlation").focus();
+                    return
+                }
+            	var url = "/get_geometric_basket_option";
+            	var data = {S1:$S1,
+            		S2:$S2,
+            		V1:$V1,
+            		V2:$V2,
+            		R:$R,
+            		T:$T,
+            		K:$K,
+            		rou:$rou,
+            		option_type:$option_type};
+            	$.ajax({
+                	type : "get",
+                	async : false,  //同步请求
+                	url : url,
+                	data : data,
+                	timeout:1000,
+                	success:function(dates){
+                    	//alert(dates);
+                        $("#basket_conf").hide();
+                    	$("#basket_price").hide().fadeIn("slow");
+                    	$("#basket_option_price").html(dates);
+                    	$option_detail = "Stock1 Price : "+$S1
+                    	+";Stock2 Price : "+$S2+";<br>"+"Volatility1  : "+$V1
+                    	+"; Volatility2 : "+$V2+";<br>"+"Risk-free interest Rate : "+$R
+                    	+"; Time to Maturity : "+$T+";<br>"+"Strike price : "+$K
+                    	+"; Correlation : "+$rou+";<br>"
+                    	+"Option Type : "+$option_type;
+                    	$("#basket_option").html($option_detail);
+                    	//$("#get_basket_option").closest('form').find("input[type=text], textarea").val("");
+                    	//$("#out").html(dates);//要刷新的div
+                	},
+                	error: function() {
+                    	alert("Pls filled correct numbers and try again!");
+                 	}
+                });
+            }
+
+            function get_basket_arith_price(){
+            	$S1 = $("#basket_stock1_price").val();
+            	$S2 = $("#basket_stock2_price").val();
+            	$V1 = $("#basket_volatility1").val();
+            	$V2 = $("#basket_volatility2").val();
+            	$R = $("#basket_rate").val();
+            	$T = $("#basket_maturity").val();
+            	$K = $("#basket_strike_price").val();
+            	$rou = $("#basket_correlation").val();
+            	$path_num = $("#basket_path_num").val();
+            	$control_variate = $("#basket_control_variate").val();
+            	$option_type = $("#basket_option_type").val();
+
+                if (parseFloat($rou) > 1){
+                    alert("the abs of correlation must smaller than 1!");
+                    $("#basket_correlation").focus();
+                    return
+                }
+            	var url = "/get_arithmetic_basket_option";
+            	var data = {S1:$S1,
+            		S2:$S2,
+            		V1:$V1,
+            		V2:$V2,
+            		R:$R,
+            		T:$T,
+            		K:$K,
+            		rou:$rou,
+            		path_num:$path_num,
+            	    control_variate:$control_variate,
+               		option_type:$option_type};
+
+
+
+            	$.ajax({
+                	type : "get",
+                	async : false,  //同步请求
+                	url : url,
+                	data : data,
+                	timeout:1000,
+                	success:function(dates){
+                    	//alert(dates);
+                        $output = dates.split(':');
+                    	$("#basket_price").hide().fadeIn("slow");
+                    	$("#basket_option_price").html($output[0]);
+                    	$option_detail = "Stock1 Price : "+$S1
+                    	+";Stock2 Price : "+$S2+";<br>"+"Volatility1  : "+$V1
+                    	+"; Volatility2 : "+$V2+";<br>"+"Risk-free interest Rate : "+$R
+                    	+"; Time to Maturity : "+$T+";<br>"+"Strike price : "+$K
+                    	+"; Correlation : "+$rou+";<br>"+"Path Number: "+$path_num
+                    	+"; Control Variate: "+$control_variate+";<br>"
+                    	+"Option Type : "+$option_type;
+                    	$("#basket_option").html($option_detail);
+                        $("#basket_conf").hide().fadeIn("slow");
+                        $("#basket_option_conf").html($output[1]);
+                    	//$("#get_basket_option").closest('form').find("input[type=text], textarea").val("");
+                    	//$("#out").html(dates);//要刷新的div
+                	},
+                	error: function() {
+                    	alert("Pls filled correct numbers and try again!");
+                 	}
+                });
+                }
+
+                $("#get_basket_option").click(function(){
+			        $geo_asi = $("#basket_geometric_arithmetic").val();
+                    if($geo_asi == "arithmetic"){
+                         //alert($geo_asi);
+                         get_basket_arith_price();
+
+                    }
+                    else if($geo_asi == "geometric") {
+                        //alert($geo_asi);
+                        get_basket_geo_price();
+                    }
+			    });
+
+		});
+		
+		</script>  
+		<!--[if lte IE 8]><link rel="stylesheet" href="css/ie/v8.css" /><![endif]-->
+	</head>
+	<body>
+
+		<!-- Header -->
+			<header id="header">
+
+				<!-- Logo -->
+					<h1 id="logo"><a href="#">Option Pricer</a></h1>
+				
+				<!-- Nav -->
+					<nav id="nav">
+						<ul>
+							<li><a href="#intro">Intro</a></li>
+							<li><a href="#one">European Option</a></li>
+							<li><a href="#two">Asian Option</a></li>
+							<li><a href="#work">Basket Option</a></li>
+							<li><a href="#contact">Contact</a></li>
+                            <li><a href="#"><U>GO PREMIUM</U></a></li>
+						</ul>
+					</nav>
+
+			</header>
+			
+		<!-- Intro -->
+			<section id="intro" class="main style1 dark fullscreen">
+				<div class="content container small">
+					<header>
+						<h2>Hey.</h2>
+					</header>
+					<p>Welcome to <strong>Option Pricer</strong> a mini option pricer which can price various options including European call/put options, Asian options, and simple basket options. The pricer employs Monte Carlo simulation or analytical close-form formulas (when possible) to price an option.</p>
+					<footer>
+						<a href="#one" class="button style2 down">More</a>
+					</footer>
+				</div>
+			</section>
+
+            
+		<!-- One -->
+			<section id="one" >
+                <div class="main style3 content container90">
+                    <header class="content container" style="color: #ffffff">
+                        <h2>European Option</h2>
+                        <p>
+                        The Black–Scholes model is a mathematical model of a financial market containing certain derivative investment instruments. From the model, one can deduce the Black–Scholes formula, which gives a theoretical estimate of the price of European-style options.
+						</p>
+                    </header>
+                </div>
+                <table>
+					<tr>
+                        <th style="width:40%">
+							<div class="main style2 left dark ">
+								<div class="content box" id="bs_box">
+                                    <form method="post" action="#" >
+                                        <table>
+                                            <tr class="6u">
+                                                <th class="th">
+                                                    <input type="text" name="spot_price" id="bs_spot_price" placeholder="Spot Price" />
+                                                </th>
+                                                <th class="th">
+                                                    <input type="text" name="volatility" id="bs_volatility" placeholder="Volatility" />
+                                                </th>
+                                            </tr>
+                                            <tr class="6u">
+                                                <th class="th">
+                                                    <input type="text" name="rate" id="bs_rate" placeholder="Risk-free interest Rate" />
+                                                </th>
+                                                <th class="th">
+                                                    <input type="text" name="maturity" id="bs_maturity" placeholder="Time to Maturity" />
+                                                </th>
+                                            </tr>
+                                            <tr class="6u">
+                                                <th class="th">
+                                                    <input type="text" name="strike_price" id="bs_strike_price" placeholder="Strike Price" />
+                                                </th>
+                                                <th class="th">
+                                                    <label for="bs_option_type"></label>
+                                                    <select name="option_type" id="bs_option_type">
+                                                        <option value ="call">Call Option</option>
+                                                        <option value ="put">Put Option</option>
+                                                    </select>
+                                                </th>
+                                            </tr>
+                                        </table>
+
+                                        <div class="row">
+                                            <div class="12u">
+                                                <ul class="actions">
+                                                    <li><input type="button" class="button" id="bs_euro" value="Start Cal" /></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </form>
+
+								</div>
+							</div>
+						</th>
+						<th style="width:40%">
+							<div id="bs_price" class="" style="display:none;color: #ffffff">
+                                <p>
+                                <strong>The Option Detailed:<span id="bs_option"></span></strong>
+                                </p>
+                                <div>
+                                This option values <h2><strong><span id="bs_option_price"></span></strong></h2>
+                                </div>
+							</div>
+						</th>
+					</tr>
+				</table>
+				<footer class="style1 dark" style="text-align: center">
+					<a href="#two" onclick="$('#bs_price').hide();" class="button style2 down ">Next</a>
+				</footer>
+			
+			</section>
+
+		
+		<!-- Two -->
+			<section id="two">
+                <div class="main style3 content container90">
+                    <header class="content container" style="color: #ffffff">
+                        <h2>Asian Option</h2>
+                        <p>
+                            An Asian option is a special type of option contract. For Asian options the payoff is determined by the average underlying price over some pre-set period of time.
+                        </p>
+                    </header>
+                </div>
+                <table>
+					<tr>
+                        <th style="width:40%">
+							<div class="main style2 left dark ">
+								<div class="content box" id="">
+                                    <form method="post" action="#" >
+                                        <table>
+                                            <tr class="6u">
+                                                <th class="th">
+                                                    <label for="asian_geometric_arithmetic"></label>
+                                                    <select name="geometric_arithmetic" id="asian_geometric_arithmetic">
+										                <option value ="geometric">Geometric</option>
+										                <option value ="arithmetic">Arithmetic</option>
+									                </select>
+                                                </th>
+                                                <th class="th">
+                                                    <input type="text" name="observation_num" id="asian_observation_num" placeholder=" Observation Number" />
+                                                </th>
+                                            </tr>
+                                            <tr class="6u">
+                                                <th class="th">
+                                                    <input type="text" name="spot_price" id="asian_spot_price" placeholder="Spot Price" />
+                                                </th>
+                                                <th class="th">
+                                                    <input type="text" name="volatility" id="asian_volatility" placeholder="Volatility" />
+                                                </th>
+                                            </tr>
+                                            <tr class="6u">
+                                                <th class="th">
+                                                    <input type="text" name="rate" id="asian_rate" placeholder="Risk-free interest Rate" />
+                                                </th>
+                                                <th class="th">
+                                                    <input type="text" name="maturity" id="asian_maturity" placeholder="Time to Maturity" />
+                                                </th>
+                                            </tr>
+                                            <tr class="6u">
+                                                <th class="th">
+                                                    <input type="text" name="strike_price" id="asian_strike_price" placeholder="Strike Price" />
+                                                </th>
+                                                <th class="th">
+                                                    <label for="asian_option_type"></label>
+                                                    <select name="option_type" id="asian_option_type">
+														<option value ="call">Call Option</option>
+														<option value ="put">Put Option</option>
+													</select>
+                                                </th>
+                                            </tr>
+                                            <tr class="6u" id="arithmetic_input" style="display: None">
+                                                <th class="th">
+                                                    <input type="text" name="path_num" value="10000" id="asian_path_num" placeholder="Path Number" />
+                                                </th>
+                                                <th class="th">
+                                                    <label for="asian_control_variate"></label>
+                                                    <select  name="control_variate" id="asian_control_variate" >
+                                                        <option value ="Standard">Standard MC</option>
+                                                        <option value ="Geometric mean Asian">Control Variate</option>
+                                                        <option value ="Geometric mean Asian with adjusted strike">Modified Strike</option>
+													</select>
+                                                </th>
+                                            </tr>
+                                        </table>
+
+                                        <div class="row">
+                                            <div class="12u">
+                                                <ul class="actions">
+                                                    <li><input type="button" class="button" id="get_asian_option" value="Start Cal" /></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </form>
+
+								</div>
+							</div>
+						</th>
+						<th style="width:40%">
+                            <div id="asian_price" class="" style="display:none;color: #ffffff">
+									<p>
+									<strong>The Option Detailed:<span id="asian_option"></span></strong>
+									</p>
+									<div>
+									This option values <h2><strong><span id="asian_option_price"></span></strong></h2>
+									</div>
+                                    <div id="asian_conf" style="display: none">
+									95% confidence interval <h2><strong><span id="asian_option_conf"></span></strong></h2>
+									</div>
+							</div>
+						</th>
+					</tr>
+				</table>
+
+				<footer class="style1 dark" style="text-align: center">
+					<a href="#work" onclick="$('#asian_price').hide();" class="button style2 down ">Next</a>
+				</footer>
+			</section>
+			
+		<!-- Work -->
+			<section id="work" class="main style3 primary">
+				<div class="content container90">
+					<header class="content container" style="color: #ffffff">
+						<h2>Basket Option</h2>
+						<p>
+                        A basket option is a financial derivative, more specifically an exotic option, whose underlying is a (weighted) sum or average of different assets that have been grouped together in a basket.
+                        </p>
+                    </header>
+					<div class="container big gallery">
+                            <div class="row flush images">
+								<div class="6u">
+                                    <div class="image full l">
+                                        <div class="content box ">
+                                            <div class="box">
+                                                <form method="post" action="#">
+                                                    <div class="row half">
+                                                        <div class="6u">
+                                                            <label>
+                                                                <select name="basket_geometric_arithmetic"  id="basket_geometric_arithmetic">
+                                                                        <option value ="geometric">Geometric</option>
+                                                                        <option value ="arithmetic">Arithmetic</option>
+                                                                </select>
+                                                            </label>
+                                                        </div>
+                                                        <div class="6u">
+                                                            <label>
+                                                                <select name="basket_option_type" id="basket_option_type">
+                                                                    <option value="call">Call Option</option>
+                                                                    <option value="put">Put Option</option>
+                                                                </select>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row half">
+                                                        <div class="6u"><input type="text" name="spot_price" id="basket_stock1_price" placeholder="Stock1 Price" /></div>
+                                                        <div class="6u"><input type="text" name="volatility" id="basket_stock2_price" placeholder="Stock2 Price" /></div>
+                                                    </div>
+                                                    <div class="row half">
+                                                        <div class="6u"><input type="text" name="rate" id="basket_volatility1" placeholder="Volatility1" /></div>
+                                                        <div class="6u"><input type="text" name="maturity" id="basket_volatility2" placeholder="Volatility2" /></div>
+                                                    </div>
+                                                    <div class="row half">
+                                                        <div class="6u"><input type="text" name="rate" id="basket_rate" placeholder="Risk-free interest Rate" /></div>
+                                                        <div class="6u"><input type="text" name="maturity" id="basket_maturity" placeholder="Time to Maturity" /></div>
+                                                    </div>
+                                                    <div class="row half">
+                                                        <div class="6u"><input type="text" name="strike_price" id="basket_strike_price" placeholder="Strike Price" /></div>
+                                                        <div class="6u"><input type="text" name="observation_num" id="basket_correlation" placeholder="Correlation" /></div>
+                                                    </div>
+                                                    <div class="row half" id="basket_arithmetic_input" style="display: None">
+                                                        <div class="6u"><input type="text" name="path_num" value="10000" id="basket_path_num" placeholder="Path Number" /></div>
+                                                        <div class="6u">
+                                                            <label>
+                                                                <select name="basket_control_variate" id="basket_control_variate">
+                                                                    <option value ="Standard">Standard MC</option>
+                                                                    <option value ="Geometric mean Asian">MC with Control Variate</option>
+                                                                    <option value ="Geometric mean Asian with adjusted strike">MC with Control Variate using Modified Strike</option>
+                                                                </select>
+                                                            </label>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="12u">
+                                                            <ul class="actions">
+                                                                <li><input type="button" class="button" id="get_basket_option" value="Start Cal" /></li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+								</div>
+                                <div class="6u"  id="basket_price" style="display:none;color: #ffffff">
+                                    <div class="image full r">
+                                        <p>
+                                        <strong>The Option Detail:<br><span id="basket_option"></span></strong>
+                                        </p>
+                                        <div>
+                                        This option values <h2><strong><span id="basket_option_price"></span></strong></h2>
+                                        </div>
+                                        <div id="basket_conf" style="display: none">
+                                        95% confidence interval <h2><strong><span id="basket_option_conf"></span></strong></h2>
+                                        </div>
+                                    </div>
+								</div>
+							</div>
+						</div>
+				</div>
+                <footer class="style1 dark" style="text-align: center">
+					<a href="#contact" onclick="$('#basket_price').hide();" class="button style2 down ">Next</a>
+				</footer>
+			</section>
+			
+		<!-- Contact -->
+			<section id="contact" class="main style3 secondary">
+				<div class="content container">
+					<header>
+						<h2>Contact Me</h2>
+						<p>If any problem, pls feel free to contact me.</p>
+					</header>
+					<div class="box container small">
+						<form method="post" action="/send_email">
+								<div class="row half">
+									<div class="6u"><input type="text" name="name" placeholder="Name" /></div>
+									<div class="6u"><input type="text" name="email" placeholder="Email" /></div>
+								</div>
+								<div class="row half">
+									<div class="12u"><textarea name="message" placeholder="Message" rows="3"></textarea></div>
+								</div>
+								<div class="row">
+									<div class="12u">
+										<ul class="actions">
+											<li><input type="submit" class="button" value="Send Message" /></li>
+										</ul>
+									</div>
+								</div>
+							</form>
+
+					</div>
+				</div>
+			</section>
+			
+		<!-- Footer -->
+			<footer id="footer">
+			
+				
+					<ul class="actions">
+						<li><a href="#" class="fa solo fa-twitter"><span>Twitter</span></a></li>
+						<li><a href="#" class="fa solo fa-facebook"><span>Facebook</span></a></li>
+						<li><a href="#" class="fa solo fa-google-plus"><span>Google+</span></a></li>
+						<li><a href="#" class="fa solo fa-dribbble"><span>Dribbble</span></a></li>
+						<li><a href="#" class="fa solo fa-pinterest"><span>Pinterest</span></a></li>
+						<li><a href="#" class="fa solo fa-instagram"><span>Instagram</span></a></li>
+					</ul>
+
+				<!-- Menu -->
+					<ul class="menu">
+						<li>&copy; Vincent</li>
+					</ul>
+			
+			</footer>
+
+	</body>
+</html>
