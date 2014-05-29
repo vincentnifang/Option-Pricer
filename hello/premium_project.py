@@ -402,6 +402,102 @@ def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=
         return GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num, GEO_MEAN)
 
 
+def european_option(K, T, R, V, S0, N, option_type, path_num=10000):
+    dt = T / N
+    sigma = V
+    drift = math.exp((R - 0.5 * sigma * sigma) * dt)
+    sigma_sqrt = sigma * math.sqrt(dt)
+    exp_RT = math.exp(-R * T)
+    european_payoff = []
+    for i in xrange(path_num):
+        former = S0
+        for j in xrange(int(N)):
+            former = former * drift * math.exp(sigma_sqrt * numpy.random.normal(0, 1))
+        european_option = former
+
+        if option_type == 'call':
+            european_payoff_call = exp_RT * max(european_option - K, 0)
+            european_payoff.append(european_payoff_call)
+        elif option_type == 'put':
+            european_payoff_put = exp_RT * max(K - european_option, 0)
+            european_payoff.append(european_payoff_put)
+
+    # Standard Monte Carlo
+    p_mean = numpy.mean(european_payoff)
+    p_std = numpy.std(european_payoff)
+    p_confmc = (p_mean - 1.96 * p_std / math.sqrt(path_num), p_mean + 1.96 * p_std / math.sqrt(path_num))
+    return p_mean, p_std, p_confmc
+
+def GPU_european_option(K, T, R, V, S0, N, option_type, path_num=10000, Quasi=True):
+    dt = T / N
+    sigma = V
+    drift = math.exp((R - 0.5 * sigma * sigma) * dt)
+    sigma_sqrt = sigma * math.sqrt(dt)
+    exp_RT = math.exp(-R * T)
+    cntxt = cl.create_some_context()
+    #now create a command queue in the context
+    queue = cl.CommandQueue(cntxt)
+    # create some data array to give as input to Kernel and get output
+    # rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, N)), dtype=numpy.float32)
+    if Quasi == True:
+        # rand1 = numpy.array(quasi.quasi_normal_random(int(path_num * N), 2.0), dtype=numpy.float32)
+        rand1 = numpy.array(quasi.GPU_quasi_normal_random(int(path_num * N), 2.0), dtype=numpy.float32)
+    else:
+        rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, N)), dtype=numpy.float32)
+
+    european_payoff = numpy.empty((path_num, 1), dtype=numpy.float32)
+    # create the buffers to hold the values of the input
+    rand1_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+                                 cl.mem_flags.COPY_HOST_PTR, hostbuf=rand1)
+    # create output buffer
+    european_payoff_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, european_payoff.nbytes)
+
+    # Kernel Program
+    code = """
+    __kernel void european_option(__global float* num1, __global float* european_payoff,float N, float K, float S0, float sigma_sqrt, float drift, float exp_RT,float option_type)
+    {
+        int i = get_global_id(0);
+        float former = S0;
+        for(int j=0;j<(int)N;j++){
+            float rand = num1[i*(int)N+j];
+            former = former * drift * exp(sigma_sqrt * rand);
+        }
+        float european = former;
+        if isequal(option_type, 1.0){
+            european_payoff[i] = exp_RT * fmax(european - K, 0);
+        }
+        else if isequal(option_type, 2.0){
+            european_payoff[i] = exp_RT * fmax(K - european, 0);
+        }
+
+    }
+    """
+    # build the Kernel
+    bld = cl.Program(cntxt, code).build()
+    N = numpy.float32(N)
+    K = numpy.float32(K)
+    S0 = numpy.float32(S0)
+    sigma_sqrt = numpy.float32(sigma_sqrt)
+    drift = numpy.float32(drift)
+    exp_RT = numpy.float32(exp_RT)
+    option_type = numpy.float32(option_type)
+
+    kernelargs = (N, K, S0, sigma_sqrt, drift, exp_RT, option_type)
+    # Kernel is now launched
+    # print rand1.shape
+    launch = bld.european_option(queue, (path_num, 1), None, rand1_buf,
+                                                  european_payoff_buf, *(kernelargs))
+    # wait till the process completes
+    launch.wait()
+    cl.enqueue_read_buffer(queue, european_payoff_buf, european_payoff).wait()
+
+    # Standard Monte Carlo
+    p_mean = numpy.mean(european_payoff)
+    p_std = numpy.std(european_payoff)
+    p_confmc = (p_mean - 1.96 * p_std / math.sqrt(path_num), p_mean + 1.96 * p_std / math.sqrt(path_num))
+    return p_mean, p_std, p_confmc
+
+
 if __name__ == '__main__':
     #print"S=100,K=100,t=0,T=0.5,v=20%,and r=1%."
     import time
@@ -417,11 +513,22 @@ if __name__ == '__main__':
     rou = 0.5
     m = 10000
 
-    print GPU_arithmetic_asian_option(K, K, T, R, V, S0, n, 1.0, path_num=10000, control_variate=STANDARD, Quasi=True)
+    print GPU_arithmetic_asian_option(K, K, T, R, V, S0, n, 1.0, path_num=100, control_variate=STANDARD, Quasi=True)
 
     import project
 
-    print project.arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', path_num=10000, control_variate=STANDARD)
+    print project.arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', path_num=100, control_variate=STANDARD)
 
+    e = time.time()
+    print "use", e - s
+
+    s = time.time()
+    print european_option(K, T, R, V, S0, n, 'call', path_num=100000)
+    e = time.time()
+    print "use", e - s
+
+    print project.bs(S0, K, T, V, R, 'call')
+    s = time.time()
+    print GPU_european_option(K, T, R, V, S0, n, 1.0, path_num=100000, Quasi=True)
     e = time.time()
     print "use", e - s
