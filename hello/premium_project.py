@@ -2,6 +2,7 @@ __author__ = 'vincent'
 from scipy import stats
 import pyopencl as cl
 import numpy, math, time
+import Quasi_Monte_Carlo as quasi
 
 STANDARD = 'Standard'
 GEO_MEAN = 'Geometric mean Asian'
@@ -44,14 +45,21 @@ def geometric_asian_option(K, T, R, V, S0, N, option_type):
 
 
 def GPU_arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_type, path_num=10000,
-                                 control_variate='Standard'):
+                                 control_variate='Standard', Quasi=True):
     if control_variate == STANDARD:
         cntxt = cl.create_some_context()
         #now create a command queue in the context
         queue = cl.CommandQueue(cntxt)
         # create some data array to give as input to Kernel and get output
-        rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
-        rand2 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+        # rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+        # rand2 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+        if Quasi == True:
+            rand1 = numpy.array(quasi.GPU_quasi_normal_random(int(path_num), 2.0), dtype=numpy.float32)
+            rand2 = numpy.array(quasi.GPU_quasi_normal_random(int(path_num), 2.0), dtype=numpy.float32)
+        else:
+            rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+            rand2 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+
         arith_basket_payoff = numpy.empty(rand1.shape, dtype=numpy.float32)
         # create the buffers to hold the values of the input
         rand1_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
@@ -110,13 +118,20 @@ def GPU_arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_typ
         return p_mean, p_std, p_confmc
 
     elif control_variate == GEO_MEAN:
-
         cntxt = cl.create_some_context()
         #now create a command queue in the context
         queue = cl.CommandQueue(cntxt)
         # create some data array to give as input to Kernel and get output
-        rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
-        rand2 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+        # rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+        # rand2 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+
+        if Quasi == True:
+            rand1 = numpy.array(quasi.GPU_quasi_normal_random(int(path_num), 2.0), dtype=numpy.float32)
+            rand2 = numpy.array(quasi.GPU_quasi_normal_random(int(path_num), 2.0), dtype=numpy.float32)
+        else:
+            rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+            rand2 = numpy.array(numpy.random.normal(0, 1, (path_num, 1)), dtype=numpy.float32)
+
         arith_basket_payoff = numpy.empty(rand1.shape, dtype=numpy.float32)
         geo_basket_payoff = numpy.empty(rand1.shape, dtype=numpy.float32)
         # create the buffers to hold the values of the input
@@ -127,7 +142,6 @@ def GPU_arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_typ
         # create output buffer
         arith_basket_payoff_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, arith_basket_payoff.nbytes)
         geo_basket_payoff_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, geo_basket_payoff.nbytes)
-
 
         # Kernel Program
         code = """
@@ -208,7 +222,8 @@ def GPU_arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_typ
         return GPU_arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_type, path_num, GEO_MEAN)
 
 
-def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=10000, control_variate='Standard'):
+def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=10000, control_variate='Standard',
+                                Quasi=True):
     if control_variate == STANDARD:
         dt = T / N
         sigma = V
@@ -220,7 +235,12 @@ def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=
         #now create a command queue in the context
         queue = cl.CommandQueue(cntxt)
         # create some data array to give as input to Kernel and get output
-        rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, N)), dtype=numpy.float32)
+        # rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, N)), dtype=numpy.float32)
+        if Quasi == True:
+            # rand1 = numpy.array(quasi.quasi_normal_random(int(path_num * N), 2.0), dtype=numpy.float32)
+            rand1 = numpy.array(quasi.GPU_quasi_normal_random(int(path_num * N), 2.0), dtype=numpy.float32)
+        else:
+            rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, N)), dtype=numpy.float32)
 
         arith_asian_payoff = numpy.empty((path_num, 1), dtype=numpy.float32)
         # create the buffers to hold the values of the input
@@ -277,9 +297,6 @@ def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=
         p_std = numpy.std(arith_asian_payoff)
         p_confmc = (p_mean - 1.96 * p_std / math.sqrt(path_num), p_mean + 1.96 * p_std / math.sqrt(path_num))
         return p_mean, p_std, p_confmc
-
-
-
     elif control_variate == GEO_MEAN:
         dt = T / N
         sigma = V
@@ -291,7 +308,11 @@ def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=
         #now create a command queue in the context
         queue = cl.CommandQueue(cntxt)
         # create some data array to give as input to Kernel and get output
-        rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, N)), dtype=numpy.float32)
+        # rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, N)), dtype=numpy.float32)
+        if Quasi == True:
+            rand1 = numpy.array(quasi.GPU_quasi_normal_random(int(path_num * N), 2.0), dtype=numpy.float32)
+        else:
+            rand1 = numpy.array(numpy.random.normal(0, 1, (path_num, N)), dtype=numpy.float32)
 
         arith_payoff = numpy.empty((path_num, 1), dtype=numpy.float32)
         geo_payoff = numpy.empty((path_num, 1), dtype=numpy.float32)
@@ -367,7 +388,6 @@ def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=
         z_std = numpy.std(z)
         z_confmc = (z_mean - 1.96 * z_std / math.sqrt(path_num), z_mean + 1.96 * z_std / math.sqrt(path_num))
         return z_mean, z_std, z_confmc
-
     elif control_variate == GEO_MEAN_STRIKE:
         # K = K + mean(agT)-mean(aaT)
         # mean(agT) = e^(mu*T)*ag_0 = e^(mu*T)*S0
@@ -397,11 +417,11 @@ if __name__ == '__main__':
     rou = 0.5
     m = 10000
 
-    print GPU_arithmetic_asian_option(K, K, T, R, V, S0, n, 1.0, path_num=10000, control_variate=GEO_MEAN)
+    print GPU_arithmetic_asian_option(K, K, T, R, V, S0, n, 1.0, path_num=10000, control_variate=STANDARD, Quasi=True)
 
     import project
 
-    print project.arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', path_num=10000, control_variate=GEO_MEAN)
+    print project.arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', path_num=10000, control_variate=STANDARD)
 
     e = time.time()
     print "use", e - s
