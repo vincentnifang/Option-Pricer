@@ -8,6 +8,11 @@ GEO_MEAN = 'Geometric mean Asian'
 GEO_MEAN_STRIKE = 'Geometric mean Asian with adjusted strike'
 
 
+STANDARD = 'Standard'
+GEO_MEAN = 'Geometric mean Asian'
+GEO_MEAN_STRIKE = 'Geometric mean Asian with adjusted strike'
+
+
 def bs(s, k, t, v, r, option_type):
     """ Black-Scholes model.
     s: Stock price
@@ -74,23 +79,33 @@ def arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=1000
         dt = T / N
         sigma = V
         drift = math.exp((R - 0.5 * sigma * sigma) * dt)
-        arith_payoff = []
+        # arith_payoff = []
+        arith_payoff = numpy.empty(path_num)
+        sigma_sqrt = sigma * math.sqrt(dt)
+        exp_RT = math.exp(-R * T)
         for i in xrange(path_num):
-            spath = []
+            # spath = []
+            spath = numpy.empty(N)
             former = S0
             for j in xrange(int(N)):
-                growth_factor = drift * math.exp(sigma * math.sqrt(dt) * numpy.random.normal(0, 1))
+                # growth_factor = drift * math.exp(sigma * math.sqrt(dt) * numpy.random.normal(0, 1))
+                growth_factor = drift * math.exp(sigma_sqrt * numpy.random.normal(0, 1))
                 former = former * growth_factor
-                spath.append(former)
+                # spath.append(former)
+                spath[j] = former
 
             arith_mean = numpy.mean(spath)
 
             if option_type == 'call':
-                arith_payoff_call = math.exp(-R * T) * max(arith_mean - K, 0)
-                arith_payoff.append(arith_payoff_call)
+                # arith_payoff_call = math.exp(-R * T) * max(arith_mean - K, 0)
+                arith_payoff_call = exp_RT * max(arith_mean - K, 0)
+                # arith_payoff.append(arith_payoff_call)
+                arith_payoff[i] = arith_payoff_call
             elif option_type == 'put':
-                arith_payoff_put = math.exp(-R * T) * max(K - arith_mean, 0)
-                arith_payoff.append(arith_payoff_put)
+                # arith_payoff_put = math.exp(-R * T) * max(K - arith_mean, 0)
+                arith_payoff_put = exp_RT * max(K - arith_mean, 0)
+                # arith_payoff.append(arith_payoff_put)
+                arith_payoff[i] = arith_payoff_put
 
 
         # Standard Monte Carlo
@@ -103,45 +118,62 @@ def arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=1000
         dt = T / N
         sigma = V
         drift = math.exp((R - 0.5 * sigma * sigma) * dt)
-        arith_payoff = []
-        geo_payoff = []
+        # arith_payoff = []
+        # geo_payoff = []
+        arith_payoff = numpy.empty(path_num)
+        geo_payoff = numpy.empty(path_num)
+        sigma_sqrt = sigma * math.sqrt(dt)
+        exp_RT = math.exp(-R * T)
         for i in xrange(path_num):
-            spath = []
+            # spath = []
+            spath = numpy.empty(N)
             former = S0
             for j in xrange(int(N)):
-                growth_factor = drift * math.exp(sigma * math.sqrt(dt) * numpy.random.normal(0, 1))
+                # growth_factor = drift * math.exp(sigma * math.sqrt(dt) * numpy.random.normal(0, 1))
+                growth_factor = drift * math.exp(sigma_sqrt * numpy.random.normal(0, 1))
                 former = former * growth_factor
-                spath.append(former)
+                # spath.append(former)
+                spath[j] = former
 
             arith_mean = numpy.mean(spath)
 
             # geo_spath = map(lambda x: math.log(x), spath)
             # geo_mean = math.exp((1 / N) * sum(geo_spath))
 
-            geo_spath = reduce(lambda x, y: x * y, spath)
-            geo_mean = math.pow(geo_spath, (1 / float(len(spath))))
+            # geo_spath = reduce(lambda x, y: x * y, spath)
+            geo_spath = numpy.prod(spath)
+            geo_mean = numpy.power(geo_spath, (1 / float(len(spath))))
 
             if option_type == 'call':
-                arith_payoff_call = math.exp(-R * T) * max(arith_mean - K, 0)
-                geo_payoff_call = math.exp(-R * T) * max(geo_mean - geo_K, 0)
-
-                arith_payoff.append(arith_payoff_call)
-                geo_payoff.append(geo_payoff_call)
+                # arith_payoff_call = math.exp(-R * T) * max(arith_mean - K, 0)
+                # geo_payoff_call = math.exp(-R * T) * max(geo_mean - geo_K, 0)
+                arith_payoff_call = exp_RT * max(arith_mean - K, 0)
+                geo_payoff_call = exp_RT * max(geo_mean - geo_K, 0)
+                # arith_payoff.append(arith_payoff_call)
+                # geo_payoff.append(geo_payoff_call)
+                arith_payoff[i] = arith_payoff_call
+                geo_payoff[i] = geo_payoff_call
             elif option_type == 'put':
-                arith_payoff_put = math.exp(-R * T) * max(K - arith_mean, 0)
-                geo_payoff_put = math.exp(-R * T) * max(geo_K - geo_mean, 0)
-                arith_payoff.append(arith_payoff_put)
-                geo_payoff.append(geo_payoff_put)
+                # arith_payoff_put = math.exp(-R * T) * max(K - arith_mean, 0)
+                # geo_payoff_put = math.exp(-R * T) * max(geo_K - geo_mean, 0)
+                arith_payoff_put = exp_RT * max(K - arith_mean, 0)
+                geo_payoff_put = exp_RT * max(geo_K - geo_mean, 0)
+                # arith_payoff.append(arith_payoff_put)
+                # geo_payoff.append(geo_payoff_put)
+                arith_payoff[i] = arith_payoff_put
+                geo_payoff[i] = geo_payoff_put
 
 
         # Control Variate
-        covxy = numpy.mean([x * y for x, y in zip(geo_payoff, arith_payoff)]) - numpy.mean(arith_payoff) * numpy.mean(
-            geo_payoff)
+        # covxy = numpy.mean([x * y for x, y in zip(geo_payoff, arith_payoff)]) - numpy.mean(arith_payoff) * numpy.mean(
+        #     geo_payoff)
+        covxy = numpy.mean(geo_payoff * arith_payoff) - numpy.mean(arith_payoff) * numpy.mean(geo_payoff)
         theta = covxy / numpy.var(geo_payoff)
 
         # Control Variate Version
         geo = geometric_asian_option(geo_K, T, R, V, S0, N, option_type)
-        z = [x + y for x, y in zip(arith_payoff, map(lambda x: theta * (geo - x), geo_payoff))]
+        # z = [x + y for x, y in zip(arith_payoff, map(lambda x: theta * (geo - x), geo_payoff))]
+        z = arith_payoff + theta * (geo - geo_payoff)
         z_mean = numpy.mean(z)
         z_std = numpy.std(z)
         z_confmc = (z_mean - 1.96 * z_std / math.sqrt(path_num), z_mean + 1.96 * z_std / math.sqrt(path_num))
@@ -156,28 +188,38 @@ def arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=1000
         E_ag = S0 * math.exp(miu * T)
 
         dt = T / N
-        E_aa = sum([math.exp(R * (i+1) * dt) for i in xrange(int(N))]) * S0 / N
+        E_aa = sum([math.exp(R * (i + 1) * dt) for i in xrange(int(N))]) * S0 / N
         geo_K = K + E_ag - E_aa
         return arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num, GEO_MEAN)
 
 
 def arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_type, path_num=10000,
                              control_variate='Standard'):
+    ran_arg_1 = (R - 0.5 * V1 * V1) * T
+    ran_arg_2 = (R - 0.5 * V2 * V2) * T
+    v1_sqrt = V1 * math.sqrt(T)
+    v2_sqrt = V2 * math.sqrt(T)
+    exp_RT = math.exp(-R * T)
     if control_variate == STANDARD:
-        arith_basket_payoff = []
+        # arith_basket_payoff = []
+        arith_basket_payoff = numpy.empty(path_num)
         for i in xrange(path_num):
             ran1 = numpy.random.normal(0, 1)
             ran2 = rou * ran1 + math.sqrt(1 - rou * rou) * numpy.random.normal(0, 1)
-            a1 = S1 * math.exp((R - 0.5 * V1 * V1) * T + V1 * math.sqrt(T) * ran1)
-            a2 = S2 * math.exp((R - 0.5 * V2 * V2) * T + V2 * math.sqrt(T) * ran2)
+            # a1 = S1 * math.exp((R - 0.5 * V1 * V1) * T + V1 * math.sqrt(T) * ran1)
+            # a2 = S2 * math.exp((R - 0.5 * V2 * V2) * T + V2 * math.sqrt(T) * ran2)
+            a1 = S1 * math.exp(ran_arg_1 + v1_sqrt * ran1)
+            a2 = S2 * math.exp(ran_arg_2 + v2_sqrt * ran2)
             arith_basket_mean = (a1 + a2) / 2
 
             if option_type == 'call':
-                arith_basket_payoff_call = math.exp(-R * T) * max(arith_basket_mean - K, 0)
-                arith_basket_payoff.append(arith_basket_payoff_call)
+                # arith_basket_payoff_call = math.exp(-R * T) * max(arith_basket_mean - K, 0)
+                arith_basket_payoff_call = exp_RT * max(arith_basket_mean - K, 0)
+                arith_basket_payoff[i] = arith_basket_payoff_call
             elif option_type == 'put':
-                arith_basket_payoff_put = math.exp(-R * T) * max(K - arith_basket_mean, 0)
-                arith_basket_payoff.append(arith_basket_payoff_put)
+                # arith_basket_payoff_put = math.exp(-R * T) * max(K - arith_basket_mean, 0)
+                arith_basket_payoff_put = exp_RT * max(K - arith_basket_mean, 0)
+                arith_basket_payoff[i] = arith_basket_payoff_put
 
 
         # Standard Monte Carlo
@@ -187,37 +229,48 @@ def arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_type, p
         return p_mean, p_std, p_confmc
 
     elif control_variate == GEO_MEAN:
-        arith_basket_payoff = []
-        geo_basket_payoff = []
+        # arith_basket_payoff = []
+        # geo_basket_payoff = []
+        arith_basket_payoff = numpy.empty(path_num)
+        geo_basket_payoff = numpy.empty(path_num)
         for i in xrange(path_num):
             ran1 = numpy.random.normal(0, 1)
             ran2 = rou * ran1 + math.sqrt(1 - rou * rou) * numpy.random.normal(0, 1)
-            a1 = S1 * math.exp((R - 0.5 * V1 * V1) * T + V1 * math.sqrt(T) * ran1)
-            a2 = S2 * math.exp((R - 0.5 * V2 * V2) * T + V2 * math.sqrt(T) * ran2)
+            # a1 = S1 * math.exp((R - 0.5 * V1 * V1) * T + V1 * math.sqrt(T) * ran1)
+            # a2 = S2 * math.exp((R - 0.5 * V2 * V2) * T + V2 * math.sqrt(T) * ran2)
+            a1 = S1 * math.exp(ran_arg_1 + v1_sqrt * ran1)
+            a2 = S2 * math.exp(ran_arg_2 + v2_sqrt * ran2)
             arith_basket_mean = (a1 + a2) / 2
 
             # geo_basket_mean = math.exp(math.log(arith_basket_mean))
             geo_basket_mean = math.sqrt(a1 * a2)
 
             if option_type == 'call':
-                arith_basket_payoff_call = math.exp(-R * T) * max(arith_basket_mean - K, 0)
-                arith_basket_payoff.append(arith_basket_payoff_call)
-                geo_basket_payoff_call = math.exp(-R * T) * max(geo_basket_mean - geo_K, 0)
-                geo_basket_payoff.append(geo_basket_payoff_call)
+                # arith_basket_payoff_call = math.exp(-R * T) * max(arith_basket_mean - K, 0)
+                arith_basket_payoff_call = exp_RT * max(arith_basket_mean - K, 0)
+                arith_basket_payoff[i] = arith_basket_payoff_call
+                # geo_basket_payoff_call = math.exp(-R * T) * max(geo_basket_mean - geo_K, 0)
+                geo_basket_payoff_call = exp_RT * max(geo_basket_mean - geo_K, 0)
+                geo_basket_payoff[i] = geo_basket_payoff_call
             elif option_type == 'put':
-                arith_basket_payoff_put = math.exp(-R * T) * max(K - arith_basket_mean, 0)
-                arith_basket_payoff.append(arith_basket_payoff_put)
-                geo_basket_payoff_put = math.exp(-R * T) * max(geo_K - geo_basket_mean, 0)
-                geo_basket_payoff.append(geo_basket_payoff_put)
+                # arith_basket_payoff_put = math.exp(-R * T) * max(K - arith_basket_mean, 0)
+                arith_basket_payoff_put = exp_RT * max(K - arith_basket_mean, 0)
+                arith_basket_payoff[i] = arith_basket_payoff_put
+                # geo_basket_payoff_put = math.exp(-R * T) * max(geo_K - geo_basket_mean, 0)
+                geo_basket_payoff_put = exp_RT * max(geo_K - geo_basket_mean, 0)
+                geo_basket_payoff[i] = geo_basket_payoff_put
 
         # Control Variate
-        covxy = numpy.mean([x * y for x, y in zip(geo_basket_payoff, arith_basket_payoff)]) - numpy.mean(
-            arith_basket_payoff) * numpy.mean(geo_basket_payoff)
+        # covxy = numpy.mean([x * y for x, y in zip(geo_basket_payoff, arith_basket_payoff)]) - numpy.mean(
+        #     arith_basket_payoff) * numpy.mean(geo_basket_payoff)
+        covxy = numpy.mean(geo_basket_payoff * arith_basket_payoff) - numpy.mean(arith_basket_payoff) * numpy.mean(
+            geo_basket_payoff)
         theta = covxy / numpy.var(geo_basket_payoff)
 
         # Control Variate Version
         geo = geometric_basket_option(S1, S2, V1, V2, R, T, geo_K, rou, option_type)
-        z = [x + y for x, y in zip(arith_basket_payoff, map(lambda x: theta * (geo - x), geo_basket_payoff))]
+        # z = [x + y for x, y in zip(arith_basket_payoff, map(lambda x: theta * (geo - x), geo_basket_payoff))]
+        z = arith_basket_payoff + theta * (geo - geo_basket_payoff)
         z_mean = numpy.mean(z)
         z_std = numpy.std(z)
         z_confmc = (z_mean - 1.96 * z_std / math.sqrt(path_num), z_mean + 1.96 * z_std / math.sqrt(path_num))
