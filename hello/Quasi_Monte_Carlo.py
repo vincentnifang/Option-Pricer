@@ -1,6 +1,5 @@
 __author__ = 'vincent'
 import math,numpy,random,time
-import GPU_QMC
 
 STANDARD = 'Standard'
 GEO_MEAN = 'Geometric mean Asian'
@@ -79,7 +78,11 @@ def quasi_normal_random(N,base=2.0):
 
 def GPU_quasi_normal_random(N,base=2.0):
     import pyopencl as cl
-    cntxt = cl.create_some_context()
+    platform = cl.get_platforms()
+    my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+    cntxt = cl.Context(devices=my_gpu_devices)
+
+    # cntxt = cl.create_some_context()
     #now create a command queue in the context
     queue = cl.CommandQueue(cntxt)
     # create some data array to give as input to Kernel and get output
@@ -161,9 +164,18 @@ def GPU_quasi_normal_random(N,base=2.0):
     return out
 
 if __name__ == "__main__":
-    N = 100000
+    N = 10000
     base = 2.0
+    s = time.time()
     print numpy.mean(GPU_quasi_normal_random(N,base))
+    e = time.time()
+    print e-s
+
+    s = time.time()
+    print numpy.mean(quasi_normal_random(N,base))
+    e = time.time()
+    print e-s
+
 
     # S = S0 = S1 = S2 = 100.0
     # T = 3.0

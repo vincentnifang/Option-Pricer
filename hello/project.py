@@ -8,11 +8,6 @@ GEO_MEAN = 'Geometric mean Asian'
 GEO_MEAN_STRIKE = 'Geometric mean Asian with adjusted strike'
 
 
-STANDARD = 'Standard'
-GEO_MEAN = 'Geometric mean Asian'
-GEO_MEAN_STRIKE = 'Geometric mean Asian with adjusted strike'
-
-
 def bs(s, k, t, v, r, option_type):
     """ Black-Scholes model.
     s: Stock price
@@ -292,95 +287,147 @@ def arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_type, p
 
 if __name__ == '__main__':
     #print"S=100,K=100,t=0,T=0.5,v=20%,and r=1%."
-	pass
-    # S = S0 = S1 = S2 = 100.0
-#     T = 3.0
-#     R = 0.05
-#     V = V1 = V2 = 0.3
-#     K = 100.0
-#     n = 50.0
-#     rou = 0.5
-#     m = 10000
-# 
-#     call_option_price = bs(100, 100, 0.5, 0.2, 0.01, 'call')
-#     put_option_price = bs(100, 100, 0.5, 0.2, 0.01, 'put')
-# 
-#     call_option_asian = geometric_asian_option(K, T, R, V, S0, n, 'call')
-#     put_option_asian = geometric_asian_option(K, T, R, V, S0, n, 'put')
-# 
-#     call_option_basket = geometric_basket_option(S1, S2, V1, V2, R, T, K, rou, 'call')
-#     put_option_basket = geometric_basket_option(S1, S2, V1, V2, R, T, K, rou, 'put')
-# 
-#     print "European call/put options:"
-#     print "call:", call_option_price
-#     print "put", put_option_price
-# 
-#     print "geometric Asian call/put options:"
-#     print "1call:", call_option_asian
-#     print "1put", put_option_asian
-# 
-#     print "geometric_basket_asian_option:"
-#     print "2call:", call_option_basket
-#     print "2put", put_option_basket
-# 
-#     MC_call_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', m, 'Standard')
-#     MC_put_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'put', m, 'Standard')
-#     print "arithmetic_asian_option-Standard Monte Carlo:"
-#     print "1call:", MC_call_arithmetic_asian
-#     print "1put", MC_put_arithmetic_asian
-# 
-#     MC_call_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'call', m, 'Standard')
-#     MC_put_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'put', m, 'Standard')
-#     print "arithmetic_basket_asian_option-Standard Monte Carlo"
-#     print "2call:", MC_call_arithmetic_basket
-#     print "2put", MC_put_arithmetic_basket
-# 
-#     MCG_call_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', m, 'Geometric mean Asian')
-#     MCG_put_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'put', m, 'Geometric mean Asian')
-#     print "arithmetic_asian_option-Control Variate:"
-#     print "1call:", MCG_call_arithmetic_asian
-#     print "1put", MCG_put_arithmetic_asian
-# 
-#     MCG_call_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'call', m,
-#                                                           'Geometric mean Asian')
-#     MCG_put_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'put', m,
-#                                                          'Geometric mean Asian')
-#     print "arithmetic_basket_asian_option-Control Variate"
-#     print "2call:", MCG_call_arithmetic_basket
-#     print "2put", MCG_put_arithmetic_basket
-# 
-#     astrike_call_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', m,
-#                                                             'Geometric mean Asian with adjusted strike')
-#     astrike_put_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'put', m,
-#                                                            'Geometric mean Asian with adjusted strike')
-#     print "arithmetic_asian_option-Control Variate:"
-#     print "1call:", astrike_call_arithmetic_asian
-#     print "1put", astrike_put_arithmetic_asian
-# 
-#     astrike_call_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'call', m,
-#                                                               'Geometric mean Asian with adjusted strike')
-#     astrike_put_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'put', m,
-#                                                              'Geometric mean Asian with adjusted strike')
-#     print "arithmetic_basket_asian_option-Control Variate"
-#     print "2call:", astrike_call_arithmetic_basket
-#     print "2put", astrike_put_arithmetic_basket
-# 
-#     # print "1call", call_option_asian, ":::::::::", MC_call_arithmetic_asian, "::::::::::", MCG_call_arithmetic_asian, ":::::::::::", astrike_call_arithmetic_asian
-#     print "................."
-#     print MC_call_arithmetic_basket, MCG_call_arithmetic_basket, astrike_call_arithmetic_basket
-#     print MC_put_arithmetic_basket, MCG_put_arithmetic_basket, astrike_put_arithmetic_basket
-# 
-#     print "--------------------"
-# 
-#     print "arithmetic_asian_option-Standard Monte Carlo:"
-#     print "1call:", MC_call_arithmetic_asian
-#     print "1put", MC_put_arithmetic_asian
-# 
-#     print "arithmetic_asian_option-Control Variate:"
-#     print "1call:", MCG_call_arithmetic_asian
-#     print "1put", MCG_put_arithmetic_asian
-# 
-#     print "arithmetic_asian_option-Control Variate:"
-#     print "1call:", astrike_call_arithmetic_asian
-#     print "1put", astrike_put_arithmetic_asian
+    import time
+
+    # N = 3000000
+    # geo_payoff = []
+    # arith_payoff = []
+    # for i in range(N):
+    #     geo_payoff.append(2)
+    #     arith_payoff.append(1)
+    #
+    # s = time.time()
+    #
+    # covxy = numpy.mean([x * y for x, y in zip(geo_payoff, arith_payoff)])
+    #
+    #
+    #
+    # # z = [x + y for x, y in zip(arith_payoff, map(lambda x: theta * (geo - x), geo_payoff))]
+    #
+    #
+    #
+    # e = time.time()
+    # print "use", e - s
+    # print covxy
+    #
+    # geo_payoff = numpy.empty(N)
+    # arith_payoff = numpy.empty(N)
+    #
+    # for i in range(N):
+    #     geo_payoff[i] = 2
+    #     arith_payoff[i] = 1
+    #
+    # s = time.time()
+    #
+    # covxy = numpy.mean(geo_payoff * arith_payoff)
+    #
+    # e = time.time()
+    # print "use", e - s
+    # print covxy
+
+    print "*********************************************************"
+
+   #print"S=100,K=100,t=0,T=0.5,v=20%,and r=1%."
+
+    s = time.time()
+
+    S = S0 = S1 = S2 = 100.0
+    T = 3.0
+    R = 0.05
+    V = V1 = V2 = 0.3
+    K = 100.0
+    n = 50.0
+    rou = 0.5
+    m = 10000
+
+    call_option_price = bs(100, 100, 0.5, 0.2, 0.01, 'call')
+    put_option_price = bs(100, 100, 0.5, 0.2, 0.01, 'put')
+
+    call_option_asian = geometric_asian_option(K, T, R, V, S0, n, 'call')
+    put_option_asian = geometric_asian_option(K, T, R, V, S0, n, 'put')
+
+    call_option_basket = geometric_basket_option(S1, S2, V1, V2, R, T, K, rou, 'call')
+    put_option_basket = geometric_basket_option(S1, S2, V1, V2, R, T, K, rou, 'put')
+
+    print "European call/put options:"
+    print "call:", call_option_price
+    print "put", put_option_price
+
+    print "geometric Asian call/put options:"
+    print "1call:", call_option_asian
+    print "1put", put_option_asian
+
+    print "geometric_basket_asian_option:"
+    print "2call:", call_option_basket
+    print "2put", put_option_basket
+
+
+    MC_call_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', m, 'Standard')
+    MC_put_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'put', m, 'Standard')
+    print "arithmetic_asian_option-Standard Monte Carlo:"
+    print "1call:", MC_call_arithmetic_asian
+    print "1put", MC_put_arithmetic_asian
+
+    MC_call_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'call', m, 'Standard')
+    MC_put_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'put', m, 'Standard')
+    print "arithmetic_basket_asian_option-Standard Monte Carlo"
+    print "2call:", MC_call_arithmetic_basket
+    print "2put", MC_put_arithmetic_basket
+
+    MCG_call_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', m, 'Geometric mean Asian')
+    MCG_put_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'put', m, 'Geometric mean Asian')
+    print "arithmetic_asian_option-Control Variate:"
+    print "1call:", MCG_call_arithmetic_asian
+    print "1put", MCG_put_arithmetic_asian
+
+    MCG_call_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'call', m,
+                                                          'Geometric mean Asian')
+    MCG_put_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'put', m,
+                                                         'Geometric mean Asian')
+    print "arithmetic_basket_asian_option-Control Variate"
+    print "2call:", MCG_call_arithmetic_basket
+    print "2put", MCG_put_arithmetic_basket
+
+    astrike_call_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'call', m,
+                                                            'Geometric mean Asian with adjusted strike')
+    astrike_put_arithmetic_asian = arithmetic_asian_option(K, K, T, R, V, S0, n, 'put', m,
+                                                           'Geometric mean Asian with adjusted strike')
+    print "arithmetic_asian_option-Control Variate:"
+    print "1call:", astrike_call_arithmetic_asian
+    print "1put", astrike_put_arithmetic_asian
+
+    astrike_call_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'call', m,
+                                                              'Geometric mean Asian with adjusted strike')
+    astrike_put_arithmetic_basket = arithmetic_basket_option(S1, S2, V1, V2, R, T, K, K, rou, 'put', m,
+                                                             'Geometric mean Asian with adjusted strike')
+    print "arithmetic_basket_asian_option-Control Variate"
+    print "2call:", astrike_call_arithmetic_basket
+    print "2put", astrike_put_arithmetic_basket
+
+    # # print "1call", call_option_asian, ":::::::::", MC_call_arithmetic_asian, "::::::::::", MCG_call_arithmetic_asian, ":::::::::::", astrike_call_arithmetic_asian
+    # print "................."
+    # print MC_call_arithmetic_basket, MCG_call_arithmetic_basket, astrike_call_arithmetic_basket
+    # print MC_put_arithmetic_basket, MCG_put_arithmetic_basket, astrike_put_arithmetic_basket
+    #
+    # print "--------------------"
+    #
+    # print "arithmetic_asian_option-Standard Monte Carlo:"
+    # print "1call:", MC_call_arithmetic_asian
+    # print "1put", MC_put_arithmetic_asian
+    #
+    # print "arithmetic_asian_option-Control Variate:"
+    # print "1call:", MCG_call_arithmetic_asian
+    # print "1put", MCG_put_arithmetic_asian
+    #
+    # print "arithmetic_asian_option-Control Variate:"
+    # print "1call:", astrike_call_arithmetic_asian
+    # print "1put", astrike_put_arithmetic_asian
+
+
+    e = time.time()
+    print "use", e - s
+
+
+
+
 

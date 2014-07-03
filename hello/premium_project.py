@@ -3,6 +3,7 @@ from scipy import stats
 import pyopencl as cl
 import numpy, math, time
 import Quasi_Monte_Carlo as quasi
+import pdb
 
 STANDARD = 'Standard'
 GEO_MEAN = 'Geometric mean Asian'
@@ -47,7 +48,10 @@ def geometric_asian_option(K, T, R, V, S0, N, option_type):
 def GPU_arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_type, path_num=10000,
                                  control_variate='Standard', Quasi=True):
     if control_variate == STANDARD:
-        cntxt = cl.create_some_context()
+        platform = cl.get_platforms()
+        my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+        cntxt = cl.Context(devices=my_gpu_devices)
+        # cntxt = cl.create_some_context()
         #now create a command queue in the context
         queue = cl.CommandQueue(cntxt)
         # create some data array to give as input to Kernel and get output
@@ -118,7 +122,10 @@ def GPU_arithmetic_basket_option(S1, S2, V1, V2, R, T, K, geo_K, rou, option_typ
         return p_mean, p_std, p_confmc
 
     elif control_variate == GEO_MEAN:
-        cntxt = cl.create_some_context()
+        platform = cl.get_platforms()
+        my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+        cntxt = cl.Context(devices=my_gpu_devices)
+        # cntxt = cl.create_some_context()
         #now create a command queue in the context
         queue = cl.CommandQueue(cntxt)
         # create some data array to give as input to Kernel and get output
@@ -231,7 +238,10 @@ def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=
         sigma_sqrt = sigma * math.sqrt(dt)
         exp_RT = math.exp(-R * T)
 
-        cntxt = cl.create_some_context()
+        platform = cl.get_platforms()
+        my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+        cntxt = cl.Context(devices=my_gpu_devices)
+        # cntxt = cl.create_some_context()
         #now create a command queue in the context
         queue = cl.CommandQueue(cntxt)
         # create some data array to give as input to Kernel and get output
@@ -304,7 +314,10 @@ def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=
         sigma_sqrt = sigma * math.sqrt(dt)
         exp_RT = math.exp(-R * T)
 
-        cntxt = cl.create_some_context()
+        platform = cl.get_platforms()
+        my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+        cntxt = cl.Context(devices=my_gpu_devices)
+        # cntxt = cl.create_some_context()
         #now create a command queue in the context
         queue = cl.CommandQueue(cntxt)
         # create some data array to give as input to Kernel and get output
@@ -402,7 +415,7 @@ def GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num=
         return GPU_arithmetic_asian_option(K, geo_K, T, R, V, S0, N, option_type, path_num, GEO_MEAN)
 
 
-def european_option(K, T, R, V, S0, N, option_type, path_num=10000):
+def standardMC_european_option(K, T, R, V, S0, N, option_type, path_num=10000):
     dt = T / N
     sigma = V
     drift = math.exp((R - 0.5 * sigma * sigma) * dt)
@@ -415,10 +428,10 @@ def european_option(K, T, R, V, S0, N, option_type, path_num=10000):
             former = former * drift * math.exp(sigma_sqrt * numpy.random.normal(0, 1))
         european_option = former
 
-        if option_type == 'call':
+        if option_type == '1.0':
             european_payoff_call = exp_RT * max(european_option - K, 0)
             european_payoff.append(european_payoff_call)
-        elif option_type == 'put':
+        elif option_type == '2.0':
             european_payoff_put = exp_RT * max(K - european_option, 0)
             european_payoff.append(european_payoff_put)
 
@@ -429,12 +442,18 @@ def european_option(K, T, R, V, S0, N, option_type, path_num=10000):
     return p_mean, p_std, p_confmc
 
 def GPU_european_option(K, T, R, V, S0, N, option_type, path_num=10000, Quasi=True):
+    # pdb.set_trace()
     dt = T / N
     sigma = V
     drift = math.exp((R - 0.5 * sigma * sigma) * dt)
     sigma_sqrt = sigma * math.sqrt(dt)
     exp_RT = math.exp(-R * T)
-    cntxt = cl.create_some_context()
+
+    platform = cl.get_platforms()
+    my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+    cntxt = cl.Context(devices=my_gpu_devices)
+
+    # cntxt = cl.create_some_context()
     #now create a command queue in the context
     queue = cl.CommandQueue(cntxt)
     # create some data array to give as input to Kernel and get output
@@ -523,7 +542,7 @@ if __name__ == '__main__':
     print "use", e - s
 
     s = time.time()
-    print european_option(K, T, R, V, S0, n, 'call', path_num=100000)
+    print standardMC_european_option(K, T, R, V, S0, n, 'call', path_num=100000)
     e = time.time()
     print "use", e - s
 
